@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>Document</title>
+	<link href="https://cdn.bootcss.com/bootstrap/3.3.7/css/bootstrap.min.css" rel="stylesheet">
+	<link rel="stylesheet" href="https://cdn.bootcss.com/bootstrap-table/1.11.1/bootstrap-table.min.css">
+	<script src='js/jquery.js'></script>
+	<script src="https://cdn.bootcss.com/jquery.form/4.2.2/jquery.form.js"></script>
+	<script src="https://cdn.bootcss.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+	<script src="https://cdn.bootcss.com/bootstrap-table/1.11.1/bootstrap-table.min.js"></script>
+	<script src="https://cdn.bootcss.com/bootstrap-table/1.11.1/locale/bootstrap-table-zh-CN.min.js"></script>
+	<script type="text/javascript" src='js/setFormData.js'></script>
+</head>
+<body>
+	<div class="container">
+		<h4>添加图书</h4>
+		<form id="userForm">
+		    <div class="form-group">
+		        <label for="exampleInputEmail1">书名</label>
+		        <input type="" id="name" name='name' class="form-control" id="exampleInputEmail1" placeholder="书名">
+		    </div>
+		    <div class="form-group">
+		    	<label for="exampleInputPassword1">作者</label>
+		    	<input type="" id="author" name='author' value='' class="form-control" id="exampleInputPassword1" placeholder="作者">
+		    </div>
+		    <div class="form-group">
+		    	<label for="exampleInputPassword1">价格</label>
+		    	<input type=""  id="price" name='price' class="form-control" id="exampleInputPassword1" placeholder="价格">
+		    </div>
+		    <div class="form-group">
+		    	<label for="exampleInputPassword1">性别</label>
+		    	<input type="radio"  name='sex' class="" value="0">男
+		    	<input type="radio"  name='sex' class="" value="1">女
+		    </div>
+		    <div class="form-group">
+		    	<label for="exampleInputPassword1">爱好</label>
+		    	<input type="checkbox" name='hobby' class="" value="0">足球
+		    	<input type="checkbox"  name='hobby' class="" value="1">篮球
+		    	<input type="checkbox"  name='hobby' class="" value="2">羽毛球
+		    	<input type="checkbox"  name='hobby' class="" value="3">乒乓球
+		    </div>
+		    <div class="form-group">
+		    	<label for="exampleInputPassword1">出生</label>
+		    	<select name='place'>
+		    		<option value='0'>广东</option>
+		    		<option value='1'>广西</option>
+		    		<option value='2'>深圳</option>
+		    	</select>
+		    </div>
+		    <button type="submit" class="btn btn-primary" id="submitBtn">提 交</button>
+		</form>
+		<h4> </h4>
+		<div class="panel panel-default">
+			<!-- Default panel contents -->
+			<div class="panel-heading">图书列表</div>
+			<!-- Table -->
+			<table class="table" id="bookTable">
+		        <thead>
+		            <tr>
+			            <th data-field="num"</th>
+			            <th data-field="name"></th>
+			            <th data-field="author"></th>
+			            <th data-field="price"></th>
+			            <th data-field="update"><button>sdf</button></th>
+		            </tr>
+		        </thead>
+		        <tbody>
+		        </tbody>
+      </table>
+		</div>
+	</div>
+	<script>
+		$(function(){
+			alert(10)
+			var addBook = {
+				initData:{name:"tom",price:10,sex:0,place:2}
+				,state:1,//0是修改，1是增加
+				showData(data){
+					$('#name').val(data.name);
+					$('#author').val(data.author);
+					$('#price').val(data.price);
+				},
+				delData(data){
+					const {name} = data;
+					$.post('/delBook',{name},(data)=>{
+						console.log(data)
+						this.getBookList();
+					})
+				},
+				updateBook (e, value, row, index) {
+							// console.log(JSON.stringify(row));
+						this.showData(row);
+						this.state = 0;
+				},
+				delBook (e, value, row, index) {
+							// console.log(JSON.stringify(row));
+						this.delData(row);
+				},
+				tableSet:[
+				    	{
+					        field: "num",
+					        title: "序号",
+  							width: '80px',
+					        formatter: function (value, row, index) {  
+                            	return index+1;  //序号
+                        	} 
+				        },
+				    	{
+					        field: "name",
+					        title: "书名"
+				        },
+				        {
+					        field: "author",
+  							width: '200px',
+					        title: "作者"
+				        },
+				        {
+					        field: "price",
+  							width: '150px',
+					        title: "价格"
+				        },
+				        {
+					        field: "update",
+  							width: '140px',
+					        title: "操作",
+					        events: {
+							    'click .updateBtn': function(e, value, row, index){
+									addBook.updateBook(e, value, row, index);
+								}
+								,
+							    'click .delBtn': function (e, value, row, index) {
+									addBook.delBook(e, value, row, index);
+							     }
+							   },
+					        formatter:function operateFormatter(value, row, index) {
+							   return [
+								   '<input type="button" value="修改" class="updateBtn btn btn-primary btn-sm"   data-toggle="modal" style="display:inline;margin:0 10px;">',
+								   '<input type="button" value="删除" class="delBtn btn btn-primary btn-sm"   data-toggle="modal" style="display:inline">'
+								   ].join('');
+							}
+				        }
+				    ],
+				init(){
+					this.getDom();
+					this.bindfn();
+					this.getBookList();
+					this.setFormData(this.initData);
+				},
+				setFormData(data){
+					$('#userForm').setForm(data)
+				}
+				,getBookList(){
+					$.get('/getAllBooks',function(data){
+						console.log(data);
+						$('#bookTable').bootstrapTable('destroy').bootstrapTable({
+				            columns:addBook.tableSet,
+				            data: data.res, 
+				            pageSize: 3,  
+        					pageNumber: 1 ,  
+        					pagination: true  
+			            })
+					})
+				},
+				getDom(){
+					this.submitBtn = $('#submitBtn');
+				},
+				bindfn(){
+					this.submitBtn && this.submitBtn.click(this.doAdd.bind(this));
+				},
+				doAdd(event){
+					//用jq.form.js插件不能用event.preventdefault();
+					var options = {   
+				        target:        '',   
+				        beforeSubmit:  function(a,b,c){
+				        },  
+				        success:       function(){
+				        	addBook.getBookList();
+				        	addBook.setFormData(addBook.initData);
+				        }
+				              
+				        ,type:      'post'        
+				        ,dataType:  'json'        
+				        ,clearForm: false       
+				        ,resetForm: true         
+				        ,timeout:   3000
+				    }; 
+					if(this.state === 0){//修改
+						options.url='/doUpdate'   
+					}else{
+						options.url='/doAdd'   
+					}
+					$("#userForm").ajaxForm(options);
+			        // $("#userForm").serialize();
+			        // $("#userForm").serializeArray();
+			        //$("#userForm").serializeJson();
+				}
+			}
+			addBook.init();
+		})
+	console.log(Math.random())
+	</script>
+</body>
+</html>
